@@ -9,7 +9,7 @@ local handle=tcpnet.new([ip[,port]])
 connects to the server, ip defaults to localhost and port defaults to 25476
 
 ```
-handle:receive(timeout[,port])
+handle:receive([timeout[,port]])
 ```
 returns port,data
 or just data if the port parameter is given
