@@ -1,3 +1,6 @@
+local config={
+	port=25476,
+}
 --[[
 	https://github.com/MightyPirates/OpenComputers/blob/master/src/main/resources/assets/opencomputers/lua/rom/lib/serialization.lua
 ]]
@@ -29,7 +32,7 @@ local function serialize(value, pretty)
 				return tostring(v)
 			end
 		elseif t == "string" then
-			return string.format("%q", v):gsub("\\\n","\\n"
+			return string.format("%q", v):gsub("\\\n","\\n")
 		elseif t == "table" and pretty and getmetatable(v) and getmetatable(v).__tostring then
 			return tostring(v)
 		elseif t == "table" then
@@ -43,38 +46,7 @@ local function serialize(value, pretty)
 			ts[v] = true
 			local i, r = 1, nil
 			local f
-			if pretty then
-				local ks, sks, oks = {}, {}, {}
-				for k in pairs(v) do
-					if type(k) == "number" then
-						table.insert(ks, k)
-					elseif type(k) == "string" then
-						table.insert(sks, k)
-					else
-						table.insert(oks, k)
-					end
-				end
-				table.sort(sks)
-				for _, k in ipairs(sks) do
-					table.insert(ks, k)
-				end
-				for _, k in ipairs(oks) do
-					table.insert(ks, k)
-				end
-				local n = 0
-				f = table.pack(function()
-					n = n + 1
-					local k = ks[n]
-					if k ~= nil then
-						return k, v[k]
-					else
-						return nil
-					end
-				end)
-			else
-				f = table.pack(pairs(v))
-			end
-			for k, v in table.unpack(f) do
+			for k, v in pairs(v) do
 				if r then
 					r = r .. "," .. (pretty and ("\n" .. string.rep(" ", l)) or "")
 				else
@@ -119,12 +91,12 @@ local function serialize(value, pretty)
 end
 
 function unserialize(data)
-	checkArg(1, data, "string")
-	local result, reason = load("return " .. data, "=data", _, {math={huge=math.huge}})
+	assert(type(data)=="string")
+	local result, reason = loadstring("return " .. data, "=data")
 	if not result then
 		return nil, reason
 	end
-	local ok, output = pcall(result)
+	local ok, output = pcall(setfenv(result,{math={huge=math.huge}}))
 	if not ok then
 		return nil, output
 	end
@@ -136,18 +108,18 @@ end
 	released in public domain because i know you hate seeing the all caps
 ]]
 
-local config={
-	port=25476,
-}
 local socket=require("socket")
 local clients={}
 local sv=socket.bind("*",config.port) -- bind port
-local socketsel={}
+sv:settimeout(0)
+local socketsel={sv}
 local function newsocket(cl)
+	print("got client")
 	cl:settimeout(0) -- make the socket non blocking
 	local o={
 		cl=cl,
 		close=function(self)
+			print("closing client")
 			cl:close()
 			clients[cl]=nil
 			for k,v in pairs(socketsel) do
@@ -158,10 +130,12 @@ local function newsocket(cl)
 			end
 		end,
 		send=function(self,dat)
-			cl:send(txt.."\n")
+			print("sending "..dat)
+			cl:send(dat.."\n")
 		end,
 		open={},
 	}
+	table.insert(socketsel,cl)
 	clients[cl]=o
 	return o
 end
@@ -178,17 +152,18 @@ while true do
 		else
 			local dat,er=cl:receive() -- try to receive data from client
 			if dat then
+				print("got "..dat)
 				err,dat=pcall(unserialize,dat)
 				if err and type(dat=="table") then
-					if dat[1]=="send" and type(dat.port):match("^[sn]") then
+					if dat[1]=="send" --[[and type(dat.port):match("^[sn]")]] then
 						for k,v in pairs(clients) do
-							if v.open[dat.port] then
-								k:send(serialize({"message",port=dat.port,data=dat.data})) -- send message
+							if v.open[dat.port] and k~=cl then
+								v:send(serialize({"message",port=dat.port,data=dat.data})) -- send message
 							end
 						end
 					elseif dat[1]=="open" and type(dat.ports)=="table" then
 						for k,v in pairs(dat.ports) do
-							cldat[k]=v~=false -- open/close ports
+							cldat.open[k]=v~=false -- open/close ports
 						end
 					end
 				end
