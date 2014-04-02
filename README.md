@@ -1,4 +1,4 @@
-<p align="center"><img src="http://i.imgur.com/m4Y0nAD.png"></p>
+<p align="center"><img src="http://i.imgur.com/Rj9rH3s.png"></p>
 
 API
 ------
