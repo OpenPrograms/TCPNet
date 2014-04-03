@@ -104,7 +104,7 @@ function unserialize(data)
 end
 
 --[[
-	TCPNet by PixelToast https://github.com/P-T-/TCPNet/
+	TCPNet server by PixelToast https://github.com/P-T-/TCPNet/
 	released in public domain because i know you hate seeing the all caps
 ]]
 
@@ -170,5 +170,5 @@ while true do
 			end
 		end
 	end
-	socket.select(socketsel,nil,10) -- "Yield" to the sockets for a minimum of 10s
+	socket.select(socketsel,nil,10) -- "yield" to the sockets for a minimum of 10s
 end
