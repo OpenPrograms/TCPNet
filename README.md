@@ -38,7 +38,8 @@ protocol
 
 every message and response is a table serialized
 ports can be strings or numbers
-data can be tables,strings,numbers
+it does serialize the data, but because computer.pushSignal doesnt support tables, my api wont allow them
+but it is really easy to write your own api
 
 ```
 {"send",port=port,data=data}
