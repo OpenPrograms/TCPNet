@@ -42,7 +42,7 @@ function handle.open(handle,...)
 	handle.socket:write(serial.serialize({"open",ports=ports}).."\n")
 	handle.socket:flush()
 end
-function handle.close(hande,...)
+function handle.close(handle,...)
 	local ports={}
 	for k,v in pairs({...}) do
 		if type(v):match("^[^sn]") then
@@ -53,7 +53,7 @@ function handle.close(hande,...)
 	handle.socket:write(serial.serialize({"open",ports=ports}).."\n")
 	handle.socket:flush()
 end
-function handle.receive(hande,timeout,port)
+function handle.receive(handle,timeout,port)
 	local tm=os.clock()+(timeout or 0)
 	while not timeout or os.clock()>=tm do
 		local ev,hnd,prt,data
@@ -62,7 +62,7 @@ function handle.receive(hande,timeout,port)
 		else
 			ev,hnd,prt,data=event.pull("tcpnet_message")
 		end
-		if ev and (not port or port==prt) then
+		if hnd==handle.id and ev and (not port or port==prt) then
 			if port then
 				return data
 			else
